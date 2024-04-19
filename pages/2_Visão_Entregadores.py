@@ -30,7 +30,7 @@ st.markdown("# Marketplace - Visão Entregadores")
 #================================
 #Barra lateral
 #================================
-image = Image.open("alvo.jpg")
+image = Image.open("logo.png")
 
 st.sidebar.image(image=image, width=300)
 

@@ -7,7 +7,7 @@ st.set_page_config(
 )
 
 
-image = Image.open("alvo.jpg")
+image = Image.open("logo.png")
 
 st.sidebar.image(image=image, width=300)
 

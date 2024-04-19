@@ -77,6 +77,8 @@ def qtde_pedidos_dia(df):
 
     fig = px.bar(data_frame=pedidos_dia_df, x="Order_Date", y="Qtde_Pedidos",
                  labels={'Qtde_Pedidos':'Quantidade de Pedidos', "Order_Date":"Data"})
+    fig.update_traces(marker_color='#E11B14')
+    
     
     return fig
     
@@ -91,7 +93,8 @@ def qtde_pedidos_trafego(df):
     pedidos_trafego_df = df.groupby("Road_traffic_density").agg({"ID":"count"}).reset_index().rename(columns={"ID":"Qtde_Pedidos"})
     pedidos_trafego_df["entregas_perc"] = pedidos_trafego_df["Qtde_Pedidos"]/pedidos_trafego_df["Qtde_Pedidos"].sum()
 
-    fig = px.pie(data_frame=pedidos_trafego_df, names="Road_traffic_density", values="entregas_perc")
+    fig = px.pie(data_frame=pedidos_trafego_df, names="Road_traffic_density", values="entregas_perc",
+                color_discrete_sequence=px.colors.sequential.RdBu)
 
     return fig
 
@@ -105,8 +108,8 @@ def qtde_pedidos_trafego_cidade(df):
     """
     cidade_trafego_df = df.groupby(["City", "Road_traffic_density"]).agg({"ID":"count"}).reset_index().rename(columns={"ID":"Qtde_Pedidos"})
     fig = px.scatter(data_frame=cidade_trafego_df, x="City", y="Road_traffic_density", size="Qtde_Pedidos", color="City",
-                 labels={'City':'Cidades', "Road_traffic_density":"Tipo de Tráfego"})
-
+                     labels={'City':'Cidades', "Road_traffic_density":"Tipo de Tráfego"},
+                     color_discrete_sequence=['#E11B14', '#F24A05', '#FFC106'])
     return fig
 
 
