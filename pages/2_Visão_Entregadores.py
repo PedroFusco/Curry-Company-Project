@@ -53,11 +53,19 @@ st.sidebar.markdown("""---""")
 
 traffic_options = st.sidebar.multiselect(
     "Condições de trânsito.",
-    ["Low", "Medium", "High", "Jam"],
-    default=["Low", "Medium", "High", "Jam"]
+    ["Baixo", "Médio", "Alto", "Congestionado"],
+    default=["Baixo", "Médio", "Alto", "Congestionado"]
 )
 st.sidebar.markdown("""---""")
 
+map1 = {"High":"Alto", "Jam":"Congestionado", "Low":"Baixo", "Medium":"Médio"}
+map2 = {"conditions Cloudy":"Nublado", "conditions Fog":"Nevoeiro", "conditions Sandstorms":"Tempestades de areia",
+        "conditions Stormy":"Tempestuoso","conditions Sunny":"Ensolarado","conditions Windy":"Ventoso"}
+map3 = {"Urban":"Urbano", "Semi-Urban":"Semi-Urbano", "Metropolitian":"Metropolitano"}
+
+df["Road_traffic_density"] = df["Road_traffic_density"].map(map1)
+df["Weatherconditions"] = df["Weatherconditions"].map(map2)
+df["City"] = df["City"].map(map3)
 
 df = df[df["Order_Date"] <= date_slider]
 df = df[df["Road_traffic_density"].isin(list(traffic_options))]
@@ -97,7 +105,7 @@ with tab1:
         with col1:
             st.markdown("### Avaliações médias por entregadores")
             df_avg_ratings_per_deliver = func.avaliacao_media_entregadores(df)
-            st.dataframe(df_avg_ratings_per_deliver)
+            st.dataframe(df_avg_ratings_per_deliver, width=430, height=530)
 
         with col2:
             st.markdown("### Avaliação média e desvio padão por trânsito")
@@ -118,10 +126,10 @@ with tab1:
         with col1:
             st.markdown("### Top entregadores mais rápidos")
             mais_rapido_por_cidade = func.entregadores_rapidos(df)
-            st.dataframe(mais_rapido_por_cidade)
+            st.dataframe(mais_rapido_por_cidade, width=430, height=530)
 
         
         with col2:
             st.markdown("### Top entregadores menos rápidos")
             mais_lentos_por_cidade = func.entregadores_lentos(df)
-            st.dataframe(mais_lentos_por_cidade)
+            st.dataframe(mais_lentos_por_cidade, width=430, height=530)

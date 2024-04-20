@@ -54,11 +54,19 @@ st.sidebar.markdown("""---""")
 st.sidebar.markdown("### Selecione as condições de trânsito")
 traffic_options = st.sidebar.multiselect(
     "Condições de trânsito.",
-    ["Low", "Medium", "High", "Jam"],
-    default=["Low", "Medium", "High", "Jam"]
+    ["Baixo", "Médio", "Alto", "Congestionado"],
+    default=["Baixo", "Médio", "Alto", "Congestionado"]
 )
 st.sidebar.markdown("""---""")
 
+map1 = {"High":"Alto", "Jam":"Congestionado", "Low":"Baixo", "Medium":"Médio"}
+map2 = {"conditions Cloudy":"Nublado", "conditions Fog":"Nevoeiro", "conditions Sandstorms":"Tempestades de areia",
+        "conditions Stormy":"Tempestuoso","conditions Sunny":"Ensolarado","conditions Windy":"Ventoso"}
+map3 = {"Urban":"Urbano", "Semi-Urban":"Semi-Urbano", "Metropolitian":"Metropolitano"}
+
+df["Road_traffic_density"] = df["Road_traffic_density"].map(map1)
+df["Weatherconditions"] = df["Weatherconditions"].map(map2)
+df["City"] = df["City"].map(map3)
 
 df = df[df["Order_Date"] <= date_slider]
 df = df[df["Road_traffic_density"].isin(list(traffic_options))]
@@ -116,4 +124,4 @@ with tab3:
     with st.container():
         map = func.map_restaurantes(df)
         st.markdown("## Localização Central das Cidade e Tipo de Tráfego")          
-        folium_static(map, width=1350, height=800)
+        folium_static(map, width=1200, height=400)

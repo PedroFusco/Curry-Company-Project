@@ -122,7 +122,7 @@ def qtde_pedidos_semana(df):
     """
     df["week_of_year"] = df["Order_Date"].dt.strftime("%U")
     pedidos_semana_df = df.groupby("week_of_year").agg({"ID":"count"}).reset_index().rename(columns={"ID":"Qtde_Pedido"})
-    fig = px.line(data_frame=pedidos_semana_df, x="week_of_year", y="Qtde_Pedido",
+    fig = px.line(data_frame=pedidos_semana_df, x="week_of_year", y="Qtde_Pedido", color_discrete_sequence=['#E11B14'],
                  labels={'week_of_year':'Número da Semana do Ano', "Qtde_Pedido":"Quantidade de Pedidos"})
 
     return fig
@@ -141,7 +141,7 @@ def qtde_pedidos_semana_entregadores(df):
     pedidos_entregadores_semana = temp_pedido_por_semana.merge(temp_entregadores_por_semana, on="week_of_year", how="inner")
     pedidos_entregadores_semana["order_by_delivery"] = pedidos_entregadores_semana["Qtde_Pedidos"]/pedidos_entregadores_semana["Entregadores_Unicos"]
 
-    fig = px.line(data_frame=pedidos_entregadores_semana, x="week_of_year", y="order_by_delivery",
+    fig = px.line(data_frame=pedidos_entregadores_semana, x="week_of_year", y="order_by_delivery", color_discrete_sequence=['#E11B14'],
                  labels={'week_of_year':'Número da Semana do Ano', "order_by_delivery":"Pedidos por Entregador"})
 
     return fig
@@ -154,12 +154,27 @@ def map_restaurantes(df):
     Input: Dataframe
     Output: Mapa com a localiozação marcada (map folium)
     """
-    loc_central_df = df.groupby(["City", "Road_traffic_density"]).agg({"Delivery_location_latitude":"median", "Delivery_location_longitude":"median"}).reset_index()
-    map = folium.Map()
+    
+    loc_central_df = df.groupby(["City", "Road_traffic_density"]).agg({"Delivery_location_latitude":"median", 
+                                                                       "Delivery_location_longitude":"median"}).reset_index()
+
+    min_lat = loc_central_df['Delivery_location_latitude'].min()
+    max_lat = loc_central_df['Delivery_location_latitude'].max()
+    min_lon = loc_central_df['Delivery_location_longitude'].min() - 1.2
+    max_lon = loc_central_df['Delivery_location_longitude'].max()
+    
+    # Calcular o centro do mapa
+    center_lat = (min_lat + max_lat) / 2
+    center_lon = (min_lon + max_lon) / 2
+
+    
+    map = folium.Map(location=[center_lat, center_lon], zoom_start=6, tiles= "OpenStreetMap")
+    
     for index, location_info in loc_central_df.iterrows():
         folium.Marker(location=[location_info["Delivery_location_latitude"],
-                                location_info["Delivery_location_longitude"]], 
-                    popup=location_info[["City", "Road_traffic_density"]]).add_to(map)
+                                location_info["Delivery_location_longitude"]],
+                      popup=location_info[["City", "Road_traffic_density"]],
+                      icon=folium.Icon(color='#E11B14', icon='cutlery', prefix='fa')).add_to(map)
     return map
 
 #====================================================================================================================
@@ -176,7 +191,8 @@ def avaliacao_media_entregadores(df):
     return  (df.groupby("Delivery_person_ID")
                 .agg({"Delivery_person_Ratings":"mean"})
                 .reset_index()
-                .rename(columns={"Delivery_person_Ratings":"Media_avaliação"}))
+                .rename(columns={"Delivery_person_ID":"ID do Entregador", 
+                                 "Delivery_person_Ratings":"Média das Avaliações"}))
 
 
 def avaliacao_media_transito(df):
@@ -189,6 +205,11 @@ def avaliacao_media_transito(df):
     delivery_mean_std = df.groupby("Road_traffic_density").agg({"Delivery_person_Ratings":["mean", "std"]})
     delivery_mean_std.columns = ["Delivery_mean", "Delivery_std"]
     delivery_mean_std.reset_index(inplace=True)
+    delivery_mean_std.rename(columns={"Road_traffic_density":"Densidade de Tráfego", 
+                                     "Delivery_mean":"Média de Entregas", 
+                                     "Delivery_std":"Desvio Padrão de Entregas"},
+                        inplace=True)
+    
     return delivery_mean_std
 
 
@@ -199,9 +220,14 @@ def avaliacao_media_clima(df):
     Input: Dataframe
     Output: Dataframe    
     """
-    weather_mean_std = df.groupby("Weatherconditions").agg({"Delivery_person_Ratings":["mean", "std"]})
+    weather_mean_std = (df.groupby("Weatherconditions").agg({"Delivery_person_Ratings":["mean", "std"]}))
     weather_mean_std.columns = ["Delivery_mean", "Delivery_std"]
     weather_mean_std.reset_index(inplace=True)
+    weather_mean_std.rename(columns={"Weatherconditions":"Condições Climáticas",
+                                     "Delivery_mean":"Média de Entregas", 
+                                     "Delivery_std":"Desvio Padrão de Entregas"},
+                           inplace=True)
+    
     return weather_mean_std
 
 
@@ -222,7 +248,11 @@ def entregadores_rapidos(df):
         .groupby("City")
         .apply(lambda x: x.nsmallest(n=10, columns="Time_taken(min)"))
         .reset_index(drop=True)
+        .rename(columns={"City":"Cidade", 
+                         "Delivery_person_ID":"ID do Entregador", 
+                         "Time_taken(min)":"Tempo(min)"})
     )
+    
     return mais_rapido_por_cidade
 
 
@@ -243,7 +273,11 @@ def entregadores_lentos(df):
         .groupby("City")
         .apply(lambda x: x.nlargest(n=10, columns="Time_taken(min)"))
         .reset_index(drop=True)
+        .rename(columns={"City":"Cidade", 
+                         "Delivery_person_ID":"ID do Entregador", 
+                         "Time_taken(min)":"Tempo(min)"})
     )
+    
     return mais_lentos_por_cidade
 #====================================================================================================================
 #Funções visão restaurantes
@@ -282,7 +316,8 @@ def tempo_medio_desvio(df):
     fig.add_trace(go.Bar(name="Control",
                         x=df_aux["City"],
                         y=df_aux["avg_time"],
-                        error_y=dict(type="data", array=df_aux["std_time"])))
+                        error_y=dict(type="data", array=df_aux["std_time"]),
+                        marker_color='#E11B14'))
 
     fig.update_layout(barmode="group")
     return fig
@@ -296,8 +331,8 @@ def tempo_medio_std_cidade_trafego(df):
     Output: Dataframe
     """
     tempo_media_cidade_tipo_trafego = df.groupby(["City", "Road_traffic_density"]).agg({"Time_taken(min)":["mean", "std"]})
-    tempo_media_cidade_tipo_trafego.columns = ["tempo_medio", "desvio_padrao_tempo"]
     tempo_media_cidade_tipo_trafego.reset_index(inplace=True)
+    tempo_media_cidade_tipo_trafego.columns = ["Cidade", "Tráfego", "Tempo Médio", "Desvio do Tempo"]
     return tempo_media_cidade_tipo_trafego
 
 
@@ -315,8 +350,12 @@ def media_distanci_cidade(df):
 
     avg_distance = df.groupby("City").agg({"distance":"mean"}).reset_index()
 
+    cores = ['#67001F', '#B2182B', '#D6604D']
+
     fig = go.Figure(data=[go.Pie(labels=avg_distance["City"], 
-                                    values=avg_distance["distance"], pull=[0, 0.1, 0])])
+                              values=avg_distance["distance"], 
+                              pull=[0, 0.1, 0],
+                              marker=dict(colors=cores))])
     return fig
 
 
@@ -331,6 +370,6 @@ def media_desvio_tempo_trafego(df):
     df_aux.columns = ["avg_time", "std_time"]
     df_aux.reset_index(inplace=True)
     fig = px.sunburst(df_aux, path=["City", "Road_traffic_density"], values="avg_time",
-                    color="std_time", color_continuous_scale="RdBu",
+                    color="std_time", color_continuous_scale="Reds",
                     color_continuous_midpoint=np.average(df_aux["std_time"]))
     return fig

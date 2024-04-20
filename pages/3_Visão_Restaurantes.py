@@ -54,10 +54,19 @@ st.sidebar.markdown("""---""")
 
 traffic_options = st.sidebar.multiselect(
     "Condições de trânsito.",
-    ["Low", "Medium", "High", "Jam"],
-    default=["Low", "Medium", "High", "Jam"]
+    ["Baixo", "Médio", "Alto", "Congestionado"],
+    default=["Baixo", "Médio", "Alto", "Congestionado"]
 )
 st.sidebar.markdown("""---""")
+
+map1 = {"High":"Alto", "Jam":"Congestionado", "Low":"Baixo", "Medium":"Médio"}
+map2 = {"conditions Cloudy":"Nublado", "conditions Fog":"Nevoeiro", "conditions Sandstorms":"Tempestades de areia",
+        "conditions Stormy":"Tempestuoso","conditions Sunny":"Ensolarado","conditions Windy":"Ventoso"}
+map3 = {"Urban":"Urbano", "Semi-Urban":"Semi-Urbano", "Metropolitian":"Metropolitano"}
+
+df["Road_traffic_density"] = df["Road_traffic_density"].map(map1)
+df["Weatherconditions"] = df["Weatherconditions"].map(map2)
+df["City"] = df["City"].map(map3)
 
 
 df = df[df["Order_Date"] <= date_slider]
@@ -107,12 +116,12 @@ with tab1:
         with col1:
             st.markdown("### Tempo médio e o desvio padrão de entrega por cidade")
             fig = func.tempo_medio_desvio(df)
-            st.plotly_chart(fig)
+            st.plotly_chart(fig,use_container_width=True)
 
         with col2:
             st.markdown("### Tempo médio e o desvio padrão por cidade e tráfego")
             tempo_media_cidade_tipo_trafego = func.tempo_medio_std_cidade_trafego(df)
-            st.dataframe(tempo_media_cidade_tipo_trafego)
+            st.dataframe(tempo_media_cidade_tipo_trafego, width=500, height=400)
        
     st.markdown("""---""")
     with st.container():
